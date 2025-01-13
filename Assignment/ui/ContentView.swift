@@ -7,37 +7,41 @@
 
 import SwiftUI
 
-struct ContentView: View {
-    private var viewModel = ContentViewModel()
-    @State private var path: [DeviceData] = [] // Navigation path
+struct ContentView: View{
+    @StateObject var vm = ContentViewModel()
+    var body: some View{
+        NavigationView{
+        VStack{
+            SearchBar(searchText: $vm.searchText)
+                if let devices = vm.data {
+                    if !vm.filteredDevices.isEmpty{
+                        List(vm.filteredDevices){d in
+                            NavigationLink(destination: DetailView(device: d)){
+                                Text(d.name)
+                            }
+                        }
+                    }else{
+                        Text("No devices")
+                    }
+                }else{
+                    ProgressView("Loading")                }
 
-    var body: some View {
-        NavigationStack(path: $path) {
-            Group {
-                if let computers = viewModel.data, !computers.isEmpty {
-                    DevicesList(devices: computers) { selectedComputer in
-                        viewModel.navigateToDetail(navigateDetail: selectedComputer)
-                    }
-                } else {
-                    ProgressView("Loading...")
-                }
             }
-            .onChange(of: viewModel.navigateDetail, {
-                let navigate = viewModel.navigateDetail
-                path.append(navigate!)
-            })
             .navigationTitle("Devices")
-            .navigationDestination(for: DeviceData.self) { computer in
-                DetailView(device: computer)
-            }
-            .onAppear {
-                let navigate = viewModel.navigateDetail
-                if (navigate != nil) {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        path.append(navigate!)
-                    }
+            .navigationBarTitleDisplayMode(.large)
+            .onAppear{
+                Task{
+                    print("Hello")
+                    await vm.getDevices()
                 }
             }
         }
+    }
+}
+
+struct SearchBar: View{
+    @Binding var searchText: String
+    var body:some View{
+        TextField("Search", text: $searchText).padding(7)
     }
 }

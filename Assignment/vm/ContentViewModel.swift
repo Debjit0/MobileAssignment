@@ -13,14 +13,26 @@ class ContentViewModel : ObservableObject {
     private let apiService = ApiService()
     @Published var navigateDetail: DeviceData? = nil
     @Published var data: [DeviceData]? = []
-
-    func fetchAPI() {
-        apiService.fetchDeviceDetails(completion: { item in
-            self.data = item
-        })
+    @Published var searchText: String = ""
+    
+    //search functionality
+    var filteredDevices: [DeviceData]{
+        guard let data = data else{return []}
+        if searchText.isEmpty{
+            return data
+        }else{
+            return data.filter{$0.name.localizedCaseInsensitiveContains(searchText)}
+        }
     }
     
-    func navigateToDetail(navigateDetail: DeviceData) {
-        self.navigateDetail = navigateDetail
+    //fetch device from apiService
+    func getDevices()async{
+        print("Called")
+        do{
+            data = try await apiService.getDevices()
+        }catch{
+            print("Error in ViewModel")
+        }
     }
+    
 }
